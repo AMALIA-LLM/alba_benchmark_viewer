@@ -82,11 +82,14 @@
                     </div>
                     
                     <div class="filter-group">
-                        <label>PT-PT Prompt</label>
-                        <select name="pt_pt_prompt">
-                            <option value="">All</option>
-                            <option value="1" {% if selected_pt_pt == '1' %}selected{% endif %}>Yes</option>
-                            <option value="0" {% if selected_pt_pt == '0' %}selected{% endif %}>No</option>
+                        <label>Prompt Type</label>
+                        <select name="prompt_type">
+                            <option value="">All Types</option>
+                            {% for pt in prompt_types %}
+                            <option value="{{ pt.prompt_type }}" {% if selected_prompt_type == pt.prompt_type %}selected{% endif %}>
+                                {{ pt.prompt_type }}
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
                     
@@ -144,14 +147,14 @@
         <div style="text-align: center; margin-bottom: 20px;">
             <div style="display: inline-flex; gap: 10px; align-items: center;">
                 {% if page > 1 %}
-                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&pt_pt_prompt={{ selected_pt_pt }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_raw %}&show_raw=1{% endif %}&page={{ page - 1 }}" 
+                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&prompt_type={{ selected_prompt_type }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_raw %}&show_raw=1{% endif %}&page={{ page - 1 }}" 
                    style="padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">← Previous</a>
                 {% endif %}
                 
                 <span style="color: #555; font-weight: 600;">Page {{ page }} / {{ total_pages }}</span>
                 
                 {% if page < total_pages %}
-                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&pt_pt_prompt={{ selected_pt_pt }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_raw %}&show_raw=1{% endif %}&page={{ page + 1 }}" 
+                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&prompt_type={{ selected_prompt_type }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_raw %}&show_raw=1{% endif %}&page={{ page + 1 }}" 
                    style="padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">Next →</a>
                 {% endif %}
             </div>
@@ -174,13 +177,11 @@
                             </div>
                             <div class="meta-item">
                                 <span class="meta-label">Model</span>
-                                <span class="meta-value">{{ result.readable_model_name }}</span>
+                                <span class="meta-value">{{ result.model_name }}</span>
                             </div>
                             <div class="meta-item">
-                                <span class="meta-label">PT-PT Prompt</span>
-                                <span class="meta-value" style="{% if result.used_pt_pt_prompt %}color: #4CAF50;{% else %}color: #F44336;{% endif %} font-weight: bold;">
-                                    {% if result.used_pt_pt_prompt %}✓ Yes{% else %}✗ No{% endif %}
-                                </span>
+                                <span class="meta-label">Prompt Type</span>
+                                <span class="meta-value">{{ result.prompt_type }}</span>
                             </div>
                         </div>
                         {% set score_color = '#F44336' if result.score < 3 else '#FF9800' if result.score < 5 else '#FFC107' if result.score < 7 else '#8BC34A' if result.score < 9 else '#4CAF50' %}

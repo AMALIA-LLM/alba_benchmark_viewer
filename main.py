@@ -192,28 +192,14 @@ def conversations():
     models = [dict(row) for row in models]
     conversations_list = cursor.execute('SELECT DISTINCT conversation_id FROM evaluations ORDER BY conversation_id').fetchall()
     conversations_list = [dict(row) for row in conversations_list]
-    for conversation in conversations_list:
-        conversation['conversation_id'] = int(conversation['conversation_id'].replace('p', '').replace('t', ' '))
-    conversations_list.sort(key=lambda x: x['conversation_id'])
-    # Delete duplicates
-    seen = set()
-    unique_conversations = []
-    for conv in conversations_list:
-        if conv['conversation_id'] not in seen:
-            unique_conversations.append(conv)
-            seen.add(conv['conversation_id'])
-    conversations_list = unique_conversations
-    # Tranform the number in string format
-    for conversation in conversations_list:
-        conversation['conversation_id'] = f"{conversation['conversation_id']}"
-
+    prompt_types = cursor.execute('SELECT DISTINCT prompt_type FROM evaluations ORDER BY prompt_type').fetchall()
+    prompt_types = [dict(row) for row in prompt_types]
 
     # Get filter parameters
     selected_db = 'pt_pt_conversation_evaluations.db'
     selected_model = request.args.get('model', '')
     selected_conversation = request.args.get('conversation', '')
-    selected_pt_pt = request.args.get('pt_pt_prompt', '')
-    # show_raw checkbox (off by default)
+    selected_prompt_type = request.args.get('prompt_type', '')
     selected_show_raw = request.args.get('show_raw', '')
     show_raw = True if str(selected_show_raw).lower() in ('1', 'on', 'true') else False
     min_score = request.args.get('min_score', '')
@@ -231,10 +217,10 @@ def conversations():
         params.append(selected_model)
     if selected_conversation:
         query += ' AND conversation_id = ?'
-        params.append(f"p{selected_conversation}{"t" if selected_pt_pt else ""}")
-    if selected_pt_pt:
-        query += ' AND used_pt_pt_prompt = ?'
-        params.append(int(selected_pt_pt))
+        params.append(selected_conversation)
+    if selected_prompt_type:
+        query += ' AND prompt_type = ?'
+        params.append(selected_prompt_type)
     if min_score:
         query += ' AND score >= ?'
         params.append(float(min_score))
@@ -266,14 +252,8 @@ def conversations():
     
     results = cursor.execute(query, params).fetchall()
     
-    # Convert results to dict and add readable names
-    results_with_names = []
-    for row in results:
-        row_dict = dict(row)
-        row_dict['readable_model_name'] = row['model_name']
-        row_dict['conversation_id'] = int(row_dict['conversation_id'].replace('p', '').replace('t', ' '))
-        results_with_names.append(row_dict)
-    results_with_names.sort(key=lambda x: (x['conversation_id'], x['turn_number']))
+    # Convert results to dict
+    results_with_names = [dict(row) for row in results]
     
     conn.close()
     return render_template('conversations.html',
@@ -283,11 +263,12 @@ def conversations():
                          total_pages=total_pages,
                          models=models,
                          conversations_list=conversations_list,
+                         prompt_types=prompt_types,
                          dbs=dbs,
                          selected_db=selected_db,
                          selected_model=selected_model,
                          selected_conversation=selected_conversation,
-                         selected_pt_pt=selected_pt_pt,
+                         selected_prompt_type=selected_prompt_type,
                          show_raw=show_raw,
                          min_score=min_score,
                          max_score=max_score,
