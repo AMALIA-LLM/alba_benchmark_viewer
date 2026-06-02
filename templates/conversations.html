@@ -17,6 +17,8 @@
         select:focus, input:focus { outline: none; border-color: #4CAF50; }
         button { background: #4CAF50; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; }
         button:hover { background: #45a049; }
+        .btn-export { background: #2196F3; margin-left: 10px; }
+        .btn-export:hover { background: #1976D2; }
         .results { display: grid; gap: 20px; }
         .turn-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .turn-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0; }
@@ -28,14 +30,6 @@
         .content-section { margin-top: 15px; }
         .content-label { font-weight: 600; color: #555; margin-bottom: 8px; font-size: 14px; }
         .content-text { background: #f9f9f9; padding: 15px; border-radius: 5px; line-height: 1.6; white-space: pre-wrap; }
-        /* toggle switch */
-        .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        .switch input:checked + .slider { background-color: #4CAF50; }
-        .switch input:checked + .slider:before { transform: translateX(20px); }
-        .toggle-label { display: flex; align-items: center; gap: 10px; font-weight: 600; color: #555; }
         .conversation-context { background: #e3f2fd; padding: 15px; border-radius: 5px; line-height: 1.6; white-space: pre-wrap; border-left: 4px solid #2196F3; }
         .no-results { text-align: center; padding: 50px; color: #888; font-size: 18px; }
     </style>
@@ -45,7 +39,7 @@
         <h1>💬 Conversations Viewer</h1>
         
         <div class="filters">
-            <form method="GET">
+            <form method="GET" id="filterForm">
                 <input type="hidden" name="db" value="pt_pt_conversation_evaluations.db">
                 <div class="filter-row">
                     <div class="filter-group">
@@ -56,10 +50,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Model</label>
-                        <select name="model">
+                        <select name="model" onchange="this.form.submit()">
                             <option value="">All Models</option>
                             {% for model in models %}
                             <option value="{{ model.model_name }}" {% if selected_model == model.model_name %}selected{% endif %}>
@@ -68,10 +62,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Conversation</label>
-                        <select name="conversation">
+                        <select name="conversation" onchange="this.form.submit()">
                             <option value="">All Conversations</option>
                             {% for conv in conversations_list %}
                             <option value="{{ conv.conversation_id }}" {% if selected_conversation == conv.conversation_id %}selected{% endif %}>
@@ -80,10 +74,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Prompt Type</label>
-                        <select name="prompt_type">
+                        <select name="prompt_type" onchange="this.form.submit()">
                             <option value="">All Types</option>
                             {% for pt in prompt_types %}
                             <option value="{{ pt.prompt_type }}" {% if selected_prompt_type == pt.prompt_type %}selected{% endif %}>
@@ -92,29 +86,18 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
-                    
+
                     <div class="filter-group">
                         <label>Min Score</label>
-                        <input type="number" name="min_score" min="0" max="10" value="{{ min_score }}" placeholder="0">
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label>Max Score</label>
-                        <input type="number" name="max_score" min="0" max="10" value="{{ max_score }}" placeholder="10">
+                        <input type="number" name="min_score" min="0" max="10" value="{{ min_score }}" placeholder="{{ min_score_val }}" onchange="this.form.submit()">
                     </div>
 
-                    <div class="filter-group" style="display:flex;align-items:center;gap:10px;">
-                        <div class="toggle-label">
-                            <span>Show raw output</span>
-                            <label class="switch" title="Toggle raw outputs display">
-                                <input type="checkbox" name="show_raw" value="1" {% if show_raw %}checked{% endif %}>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
+                    <div class="filter-group">
+                        <label>Max Score</label>
+                        <input type="number" name="max_score" min="0" max="10" value="{{ max_score }}" placeholder="{{ max_score_val }}" onchange="this.form.submit()">
                     </div>
                 </div>
-                <button type="submit">Apply Filters</button>
+                <button type="button" class="btn-export" onclick="exportJson()">Export JSON</button>
             </form>
         </div>
         
@@ -147,14 +130,14 @@
         <div style="text-align: center; margin-bottom: 20px;">
             <div style="display: inline-flex; gap: 10px; align-items: center;">
                 {% if page > 1 %}
-                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&prompt_type={{ selected_prompt_type }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_raw %}&show_raw=1{% endif %}&page={{ page - 1 }}" 
+                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&prompt_type={{ selected_prompt_type }}&min_score={{ min_score }}&max_score={{ max_score }}&page={{ page - 1 }}"
                    style="padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">← Previous</a>
                 {% endif %}
                 
                 <span style="color: #555; font-weight: 600;">Page {{ page }} / {{ total_pages }}</span>
                 
                 {% if page < total_pages %}
-                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&prompt_type={{ selected_prompt_type }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_raw %}&show_raw=1{% endif %}&page={{ page + 1 }}" 
+                <a href="?db={{ selected_db }}&model={{ selected_model }}&conversation={{ selected_conversation }}&prompt_type={{ selected_prompt_type }}&min_score={{ min_score }}&max_score={{ max_score }}&page={{ page + 1 }}"
                    style="padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">Next →</a>
                 {% endif %}
             </div>
@@ -204,12 +187,6 @@
                         <div class="content-text">{{ result.reasoning }}</div>
                     </div>
                     {% endif %}
-                    {% if show_raw and result.raw_output %}
-                    <div class="content-section">
-                        <div class="content-label">Raw Output:</div>
-                        <div class="content-text" style="font-family: monospace; white-space: pre-wrap;">{{ result.raw_output }}</div>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}
@@ -217,5 +194,12 @@
             {% endif %}
         </div>
     </div>
+    <script>
+    function exportJson() {
+        const params = new URLSearchParams(window.location.search);
+        params.set('db', 'pt_pt_conversation_evaluations.db');
+        window.location.href = '/export_json?' + params.toString();
+    }
+    </script>
 </body>
 </html>

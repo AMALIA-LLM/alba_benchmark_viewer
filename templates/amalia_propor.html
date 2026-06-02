@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amália PROPOR Results</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 30px; text-align: center; }
+        .filters { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .filter-group { display: flex; flex-direction: column; }
+        label { font-weight: 600; color: #555; margin-bottom: 5px; font-size: 14px; }
+        select, input { padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 14px; }
+        select:focus, input:focus { outline: none; border-color: #4CAF50; }
+        button { background: #4CAF50; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        button:hover { background: #45a049; }
+        .btn-export { background: #2196F3; margin-left: 10px; }
+        .btn-export:hover { background: #1976D2; }
+        .results { display: grid; gap: 20px; }
+        .result-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0; }
+        .result-meta { display: flex; gap: 20px; flex-wrap: wrap; }
+        .meta-item { display: flex; flex-direction: column; }
+        .meta-label { font-size: 12px; color: #888; text-transform: uppercase; }
+        .meta-value { font-weight: 600; color: #333; margin-top: 3px; }
+        .score { font-size: 24px; font-weight: bold; padding: 10px 20px; border-radius: 5px; color: white; }
+        .content-section { margin-top: 15px; }
+        .content-label { font-weight: 600; color: #555; margin-bottom: 8px; font-size: 14px; }
+        .content-text { background: #f9f9f9; padding: 15px; border-radius: 5px; line-height: 1.6; white-space: pre-wrap; }
+        .no-results { text-align: center; padding: 50px; color: #888; font-size: 18px; }
+        .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .switch input:checked + .slider { background-color: #4CAF50; }
+        .switch input:checked + .slider:before { transform: translateX(20px); }
+        .toggle-label { display: flex; align-items: center; gap: 10px; font-weight: 600; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇵🇹 Amália PROPOR Results</h1>
+
+        <div class="filters">
+            <form method="GET" id="filterForm">
+                <input type="hidden" name="db" value="amalia_propor.db">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>Database</label>
+                        <select name="db" onchange="window.location.href='?db='+this.value">
+                            {% for db in dbs %}
+                            <option value="{{ db }}" {% if selected_db == db %}selected{% endif %}>{{ db }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Model</label>
+                        <select name="model" onchange="this.form.submit()">
+                            <option value="">All Models</option>
+                            {% for model in models %}
+                            <option value="{{ model.model_name }}" {% if selected_model == model.model_name %}selected{% endif %}>
+                                {{ model.model_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Category</label>
+                        <select name="category" onchange="this.form.submit()">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.category }}" {% if selected_category == cat.category %}selected{% endif %}>
+                                {{ cat.category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Min Score</label>
+                        <input type="number" name="min_score" min="0" max="10" step="0.1" value="{{ min_score }}" placeholder="{{ min_score_val }}" onchange="this.form.submit()">
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Max Score</label>
+                        <input type="number" name="max_score" min="0" max="10" step="0.1" value="{{ max_score }}" placeholder="{{ max_score_val }}" onchange="this.form.submit()">
+                    </div>
+
+                    <div class="filter-group" style="display:flex;align-items:center;gap:10px;">
+                        <div class="toggle-label">
+                            <span>Show judge info</span>
+                            <label class="switch" title="Toggle judge prompt display">
+                                <input type="checkbox" name="show_judge" value="1" {% if show_judge %}checked{% endif %} onchange="this.form.submit()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-export" onclick="exportJson()">Export JSON</button>
+            </form>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px; font-size: 18px; color: #555;">
+            <strong>{{ total_count }}</strong> results found (page {{ page }} of {{ total_pages }})
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; text-align: center;">
+                <div>
+                    <div style="font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 5px;">Average</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #4CAF50;">{{ avg_score }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 5px;">Median</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #2196F3;">{{ median_score }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 5px;">Min</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #F44336;">{{ min_score_val }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 5px;">Max</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #4CAF50;">{{ max_score_val }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="display: inline-flex; gap: 10px; align-items: center;">
+                {% if page > 1 %}
+                <a href="?db={{ selected_db }}&model={{ selected_model }}&category={{ selected_category }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_judge %}&show_judge=1{% endif %}&page={{ page - 1 }}"
+                   style="padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">← Previous</a>
+                {% endif %}
+
+                <span style="color: #555; font-weight: 600;">Page {{ page }} / {{ total_pages }}</span>
+
+                {% if page < total_pages %}
+                <a href="?db={{ selected_db }}&model={{ selected_model }}&category={{ selected_category }}&min_score={{ min_score }}&max_score={{ max_score }}{% if show_judge %}&show_judge=1{% endif %}&page={{ page + 1 }}"
+                   style="padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">Next →</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="results">
+            {% if results %}
+                {% for result in results %}
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Model</span>
+                                <span class="meta-value">{{ result.model_name }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Category</span>
+                                <span class="meta-value">{{ result.category }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Prompt ID</span>
+                                <span class="meta-value">{{ result.prompt_id }}</span>
+                            </div>
+                        </div>
+                        {% set score_color = '#F44336' if result.score < 3 else '#FF9800' if result.score < 5 else '#FFC107' if result.score < 7 else '#8BC34A' if result.score < 9 else '#4CAF50' %}
+                        <div class="score" style="background: {{ score_color }}">{{ result.score }}</div>
+                    </div>
+
+                    <div class="content-section">
+                        <div class="content-label">Prompt:</div>
+                        <div class="content-text">{{ result.prompt }}</div>
+                    </div>
+
+                    <div class="content-section">
+                        <div class="content-label">Model Response:</div>
+                        <div class="content-text">{{ result.model_response }}</div>
+                    </div>
+
+                    {% if result.explanation %}
+                    <div class="content-section">
+                        <div class="content-label">Explanation:</div>
+                        <div class="content-text">{{ result.explanation }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if show_judge and result.judge_prompt %}
+                    <div class="content-section">
+                        <div class="content-label">Judge Prompt:</div>
+                        <div class="content-text" style="font-family: monospace; font-size: 12px;">{{ result.judge_prompt }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if show_judge and result.judge_plain_answer %}
+                    <div class="content-section">
+                        <div class="content-label">Judge Answer:</div>
+                        <div class="content-text">{{ result.judge_plain_answer }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-results">No results found. Try adjusting your filters.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    function exportJson() {
+        const params = new URLSearchParams(window.location.search);
+        params.set('db', 'amalia_propor.db');
+        window.location.href = '/export_json?' + params.toString();
+    }
+    </script>
+</body>
+</html>

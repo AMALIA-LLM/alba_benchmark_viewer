@@ -36,7 +36,7 @@
         <h1>📊 Evaluations Viewer</h1>
         
         <div class="filters">
-            <form method="GET">
+            <form method="GET" id="filterForm">
                 <input type="hidden" name="db" value="evaluations.db">
                 <div class="filter-row">
                     <div class="filter-group">
@@ -47,10 +47,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Model</label>
-                        <select name="model">
+                        <select name="model" onchange="this.form.submit()">
                             <option value="">All Models</option>
                             {% for model in models %}
                             <option value="{{ model.model_name }}" {% if selected_model == model.model_name %}selected{% endif %}>
@@ -59,10 +59,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Group</label>
-                        <select name="group">
+                        <select name="group" onchange="this.form.submit()">
                             <option value="">All Groups</option>
                             {% for group in groups %}
                             <option value="{{ group.group_name }}" {% if selected_group == group.group_name %}selected{% endif %}>
@@ -71,18 +71,17 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Min Score</label>
-                        <input type="number" name="min_score" min="0" max="100" value="{{ min_score }}" placeholder="0">
+                        <input type="number" name="min_score" min="0" max="100" value="{{ min_score }}" placeholder="{{ min_score_val }}" onchange="this.form.submit()">
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Max Score</label>
-                        <input type="number" name="max_score" min="0" max="100" value="{{ max_score }}" placeholder="100">
+                        <input type="number" name="max_score" min="0" max="100" value="{{ max_score }}" placeholder="{{ max_score_val }}" onchange="this.form.submit()">
                     </div>
                 </div>
-                <button type="submit">Apply Filters</button>
             </form>
         </div>
         
